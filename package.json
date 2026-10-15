@@ -1,0 +1,1 @@
+{"name":"local-share-shelf","version":"1.0.0","private":true,"description":"Private home-network file sharing shelf","scripts":{"start":"node server.js","test":"node --test"},"engines":{"node":">=20"}}

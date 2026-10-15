@@ -1,0 +1,13 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs'); const fsp = fs.promises; const path = require('path'); const os = require('os'); const {spawn} = require('child_process');
+const root = path.join(__dirname,'..'); let data, port, child;
+function start(){return new Promise((resolve,reject)=>{child=spawn(process.execPath,[path.join(root,'server.js')],{env:{...process.env,LOCAL_SHELF_DATA:data,LOCAL_SHELF_PORT:String(port)},stdio:['ignore','pipe','pipe']});let timer=setTimeout(()=>reject(new Error('server timeout')),5000);child.stdout.on('data',b=>{if(String(b).includes('listening')){clearTimeout(timer);resolve()}});child.on('error',reject);});}
+async function stop(){if(!child)return;child.kill();await new Promise(r=>child.once('exit',r));child=null;}
+const api=()=>`http://127.0.0.1:${port}`;
+async function upload(name,body,rel=name){return fetch(api()+'/api/items/file',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-File-Name':encodeURIComponent(name),'X-Relative-Path':encodeURIComponent(rel)},body}).then(r=>r.json());}
+test.before(async()=>{data=await fsp.mkdtemp(path.join(os.tmpdir(),'shelf-'));port=48000+Math.floor(Math.random()*500);await start()});
+test.after(async()=>{await stop();await fsp.rm(data,{recursive:true,force:true})});
+test('files round trip and duplicate names',async()=>{const a=Buffer.from('hello\0world');const one=await upload('same.txt',a);const two=await upload('same.txt',Buffer.from('second'));assert.notEqual(one.id,two.id);const got=await fetch(api()+'/api/download?id='+one.id);assert.deepEqual(Buffer.from(await got.arrayBuffer()),a);});
+test('notes links and folder zip are stored safely',async()=>{const note=await fetch(api()+'/api/items/note',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:'<script>alert(1)</script>\nhttps://example.com'})});assert.equal(note.status,201);const a=await upload('../evil.html','A','Photos/../evil.html');const b=await upload('pic.txt','B','Photos/sub/pic.txt');assert.match(a.relativePath,/evil\.html$/);const list=await (await fetch(api()+'/api/items')).json();const folder=list.find(x=>x.type==='folder'&&x.name==='sub');assert.ok(folder);const zip=Buffer.from(await (await fetch(api()+'/api/download?id='+folder.id)).arrayBuffer());assert.ok(zip.includes(Buffer.from('pic.txt')));});
+test('cross-origin writes rejected and persistence survives restart',async()=>{const r=await fetch(api()+'/api/items/note',{method:'POST',headers:{Origin:'http://attacker.test','Content-Type':'application/json'},body:'{}'});assert.equal(r.status,403);await stop();await start();const list=await (await fetch(api()+'/api/items')).json();assert.ok(list.some(x=>x.type==='file'));});
