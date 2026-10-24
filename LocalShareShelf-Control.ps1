@@ -26,7 +26,7 @@ $title.AutoSize = $true
 $form.Controls.Add($title)
 
 $subtitle = New-Object System.Windows.Forms.Label
-$subtitle.Text = "Private home-network sharing · dedicated port $Port"
+$subtitle.Text = "Private home-network sharing - dedicated port $Port"
 $subtitle.ForeColor = [System.Drawing.Color]::FromArgb(92,105,120)
 $subtitle.Location = New-Object System.Drawing.Point(31,62)
 $subtitle.AutoSize = $true
@@ -79,13 +79,13 @@ function Refresh-Status {
   $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
   $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
   if ($listener) {
-    $status.Text = "● Running · port $Port · PID $($listener.OwningProcess)"
+    $status.Text = "[RUNNING] port $Port - PID $($listener.OwningProcess)"
     $status.ForeColor = [System.Drawing.Color]::FromArgb(20,125,67)
   } elseif ($task -and $task.State -eq 'Running') {
-    $status.Text = 'Starting…'
+    $status.Text = '[STARTING]'
     $status.ForeColor = [System.Drawing.Color]::FromArgb(180,115,0)
   } else {
-    $status.Text = '○ Stopped'
+    $status.Text = '[STOPPED]'
     $status.ForeColor = [System.Drawing.Color]::FromArgb(180,45,35)
   }
 }
