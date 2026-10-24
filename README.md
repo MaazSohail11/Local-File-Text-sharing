@@ -58,6 +58,10 @@ http://192.168.1.240:48721
 
 Bookmark the working address. For a stable bookmark, reserve the PC's address in your router's DHCP settings.
 
+### Desktop control panel
+
+Installation also provides a Desktop shortcut named **Local Share Shelf**. Double-click it for a simple control panel with **Start**, **Stop**, **Restart**, **Open in Browser**, **Open Data Folder**, **Open Installed App**, **Open Source Folder**, **Open README**, **Copy PC Address**, and live status controls.
+
 ## What you can do
 
 | Action | How it works |
