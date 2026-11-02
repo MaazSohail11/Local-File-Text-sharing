@@ -111,7 +111,7 @@ Protection included in the application:
 
 ## Windows startup
 
-Installation creates a Task Scheduler startup task that runs as the restricted `NT AUTHORITY\LocalService` account. It starts at boot without requiring an open terminal or logged-in desktop and retries after failures.
+Installation creates a Task Scheduler task with an actual **At startup** trigger. It runs as the restricted `NT AUTHORITY\LocalService` account, starts at boot without requiring an open terminal or logged-in desktop, and retries after failures. A small launcher also keeps retrying if the dedicated port `48721` is temporarily occupied instead of silently leaving the shelf offline.
 
 ```powershell
 .\status.ps1

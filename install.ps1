@@ -6,16 +6,18 @@ $Node = (Get-Command node.exe -ErrorAction Stop).Source
  $InstallRoot = Join-Path $Data 'app'
 New-Item -ItemType Directory -Force -Path $Data, $InstallRoot, (Join-Path $Data 'files'), (Join-Path $Data 'tmp'), (Join-Path $Data 'logs') | Out-Null
 Copy-Item -LiteralPath (Join-Path $App 'server.js') -Destination $InstallRoot -Force
+Copy-Item -LiteralPath (Join-Path $App 'launcher.js') -Destination $InstallRoot -Force
 Copy-Item -LiteralPath (Join-Path $App 'package.json') -Destination $InstallRoot -Force
 Copy-Item -LiteralPath (Join-Path $App 'LocalShareShelf-Control.ps1') -Destination $InstallRoot -Force
 if (Test-Path (Join-Path $InstallRoot 'public')) { Remove-Item -LiteralPath (Join-Path $InstallRoot 'public') -Recurse -Force }
 Copy-Item -LiteralPath (Join-Path $App 'public') -Destination $InstallRoot -Recurse -Force
 icacls $Data /inheritance:r /grant:r 'NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(M)' 'BUILTIN\Administrators:(OI)(CI)(F)' | Out-Null
 icacls $App /grant:r 'NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(RX)' | Out-Null
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1)
-$action = New-ScheduledTaskAction -Execute $Node -Argument ('"' + (Join-Path $InstallRoot 'server.js') + '"')
+$action = New-ScheduledTaskAction -Execute $Node -Argument ('"' + (Join-Path $InstallRoot 'launcher.js') + '"')
 $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\LocalService' -LogonType ServiceAccount -RunLevel Limited
-Register-ScheduledTask -TaskName 'Local Share Shelf' -Action $action -Principal $principal -Settings $settings -Force | Out-Null
+$trigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay (New-TimeSpan -Seconds 10)
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
+Register-ScheduledTask -TaskName 'Local Share Shelf' -Action $action -Principal $principal -Trigger $trigger -Settings $settings -Force | Out-Null
 Get-NetFirewallRule -DisplayName 'Local Share Shelf (Private LAN)' -ErrorAction SilentlyContinue | Remove-NetFirewallRule -Confirm:$false -ErrorAction SilentlyContinue
 New-NetFirewallRule -DisplayName 'Local Share Shelf (Private LAN)' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 48721 -Profile Private -RemoteAddress LocalSubnet -Program $Node | Out-Null
 $desktop = [Environment]::GetFolderPath('Desktop')
