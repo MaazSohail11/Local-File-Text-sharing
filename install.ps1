@@ -15,7 +15,7 @@ icacls $Data /inheritance:r /grant:r 'NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(M)' 'B
 icacls $App /grant:r 'NT AUTHORITY\LOCAL SERVICE:(OI)(CI)(RX)' | Out-Null
 $action = New-ScheduledTaskAction -Execute $Node -Argument ('"' + (Join-Path $InstallRoot 'launcher.js') + '"')
 $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\LocalService' -LogonType ServiceAccount -RunLevel Limited
-$trigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay (New-TimeSpan -Seconds 10)
+$trigger = New-ScheduledTaskTrigger -AtStartup
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
 Register-ScheduledTask -TaskName 'Local Share Shelf' -Action $action -Principal $principal -Trigger $trigger -Settings $settings -Force | Out-Null
 Get-NetFirewallRule -DisplayName 'Local Share Shelf (Private LAN)' -ErrorAction SilentlyContinue | Remove-NetFirewallRule -Confirm:$false -ErrorAction SilentlyContinue
